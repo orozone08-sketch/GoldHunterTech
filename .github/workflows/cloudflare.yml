@@ -49,6 +49,7 @@ jobs:
       - run: npm ci --prefix frontend
       - run: npm run deploy
       - name: Verify production
+        shell: bash
         run: |
           curl --fail --retry 5 --retry-delay 3 https://goldhuntertech.orozone08.workers.dev/ > /dev/null
           curl --fail --retry 5 --retry-delay 3 https://goldhuntertech.orozone08.workers.dev/api/health | jq -e '.status == "ok" and .database == "ok"'
