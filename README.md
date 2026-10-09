@@ -18,6 +18,8 @@ Open http://localhost:8787. For frontend hot reload, also run `npm --prefix fron
 
 ## Production and Git flow
 
+Live site: https://goldhuntertech.orozone08.workers.dev
+
 The Wrangler config targets Orozone08@gmail.com's Cloudflare account. A dedicated D1 database stores every quotation field with an ID and timestamp. `/api/health` checks database connectivity. No public API exposes customer records; inspect them in the authenticated Cloudflare D1 console.
 
 Create feature branches and open PRs into `main`. The Cloudflare workflow validates PRs without production access. Pushes to `main` build, migrate, deploy and verify production. Configure repository Actions secret `CLOUDFLARE_API_TOKEN` with Workers Scripts Edit, D1 Edit and Account Settings Read scoped to this account. Add Workers R2 Storage Edit after R2 activation. Never store a short-lived local OAuth token as a CI secret.
