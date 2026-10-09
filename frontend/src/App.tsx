@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowRight, BadgeCheck, Building2, CheckCircle2, ChevronDown, Factory,
   FlaskConical, Flame, GraduationCap, Mail, MapPin, Menu, Phone, Send,
@@ -98,14 +98,32 @@ function App() {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [attachmentsAvailable, setAttachmentsAvailable] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/health', { signal: controller.signal })
+      .then(async (response) => {
+        if (response.ok) {
+          const health = await response.json();
+          setAttachmentsAvailable(health.attachments === true);
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   async function submitForm(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault(); setSending(true); setError(''); setSent(false);
+    const form = e.currentTarget;
     try {
-      const response = await fetch('http://localhost:8000/api/contact', { method: 'POST', body: new FormData(e.currentTarget) });
-      if (!response.ok) throw new Error('Unable to submit enquiry');
-      setSent(true); e.currentTarget.reset();
-    } catch { setError('We could not send your enquiry right now. Please call or WhatsApp us directly.'); }
+      const response = await fetch('/api/contact', { method: 'POST', body: new FormData(form) });
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(typeof result?.message === 'string' ? result.message : 'We could not send your enquiry right now. Please try again.');
+      }
+      setSent(true); form.reset();
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'We could not send your enquiry right now. Please try again.'); }
     finally { setSending(false); }
   }
 
@@ -152,7 +170,7 @@ function App() {
 
         <section id="knowledge" className="section knowledge-section"><div className="section-kicker">12 / KNOWLEDGE CENTRE</div><div className="section-heading-row"><h2>Learn the process.<br /><em>Plan with clarity.</em></h2><p>Practical resources across refining, assay, hallmarking, bullion, technology, automation, pollution control and refinery project planning.</p></div><div className="knowledge-topics"><span>Gold Refining Technology</span><span>Gold Dust Recovery</span><span>Jewellery Scrap Refining</span><span>Gold Dore</span><span>Silver Refining</span><span>Fire Assay</span><span>XRF Testing</span><span>Hallmarking</span><span>Gold Bars</span><span>Gold Coins</span><span>Pollution Control</span><span>Technology &amp; Automation</span><span>FAQs</span></div><div className="article-grid">{knowledgeArticles.map((article, index) => <a href="#quote" className="article-card" key={article}><span>ARTICLE / {String(index + 1).padStart(2, '0')}</span><strong>{article}</strong><ArrowRight size={16} /></a>)}</div></section>
 
-        <section id="quote" className="quote-section"><div className="quote-intro"><div className="section-kicker">13 / REQUEST A QUOTE</div><h2>Let&apos;s build the<br /><em>right solution.</em></h2><p>Share your project type, feed, capacity, available area or project drawing. Our team will get back to you with the next technical step.</p><div className="contact-details"><span><Phone size={17} /> +91 00000 00000</span><span><Mail size={17} /> sales@goldhuntertech.com</span><span><MapPin size={17} /> India / Global Projects</span></div></div><form className="quote-form" onSubmit={submitForm}><div className="form-grid"><label>Project type *<select name="project_type" defaultValue="Gold Refinery" required><option>Gold Refinery</option><option>Silver Refinery</option><option>Gold Bar Factory</option><option>Gold Coin Factory</option><option>Gold Bar + Coin Factory</option><option>Hallmarking Centre</option><option>Fire Assay Laboratory</option><option>XRF Laboratory</option><option>Complete Precious Metal Plant</option><option>Existing Plant Upgrade</option></select></label><label>Feed<select name="feed" defaultValue="Gold dust"><option>Gold dust</option><option>Jewellery scrap</option><option>Dore</option><option>Mixed precious-metal scrap</option><option>Other</option></select></label><label>Capacity *<select name="capacity" defaultValue="1–5 kg" required><option>&lt;1 kg</option><option>1–5 kg</option><option>5–10 kg</option><option>10–25 kg</option><option>25–50 kg</option><option>50–100 kg</option><option>100 kg+</option></select></label><label>Required production / day<input name="production_per_day" placeholder="Tell us your target" /></label><label>Name *<input name="name" required placeholder="Your name" /></label><label>Company<input name="company" placeholder="Company name" /></label><label>Country / City<input name="country_city" placeholder="Country or city" /></label><label>Phone / WhatsApp *<input name="phone" required placeholder="+91" /></label><label className="full-field">Email *<input name="email" type="email" required placeholder="you@company.com" /></label><label>Available area<input name="available_area" placeholder="Approx. floor area" /></label><label>Project planner<select name="planner" defaultValue="Not sure yet"><option>Not sure yet</option><option>Need a project plan</option><option>Have a layout / drawing</option><option>Need a feasibility discussion</option></select></label><label className="full-field">Message<textarea name="message" rows={4} required placeholder="Tell us about your requirement" /></label><label className="upload-field full-field"><Upload size={16} /> Upload PDF / Excel / images<input type="file" name="attachment" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.dwg" /></label></div><button className="quote-button" type="submit" disabled={sending}>{sending ? 'Sending…' : <>Submit Enquiry <Send size={16} /></>}</button>{sent && <div className="form-message success-message"><CheckCircle2 size={17} /> Thanks — your enquiry has been received.</div>}{error && <div className="form-message error-message">{error}</div>}</form></section>
+        <section id="quote" className="quote-section"><div className="quote-intro"><div className="section-kicker">13 / REQUEST A QUOTE</div><h2>Let&apos;s build the<br /><em>right solution.</em></h2><p>Share your project type, feed, capacity, available area or project drawing. Our team will get back to you with the next technical step.</p><div className="contact-details"><span><Phone size={17} /> +91 00000 00000</span><span><Mail size={17} /> sales@goldhuntertech.com</span><span><MapPin size={17} /> India / Global Projects</span></div></div><form className="quote-form" onSubmit={submitForm}><div className="form-grid"><label>Project type *<select name="project_type" defaultValue="Gold Refinery" required><option>Gold Refinery</option><option>Silver Refinery</option><option>Gold Bar Factory</option><option>Gold Coin Factory</option><option>Gold Bar + Coin Factory</option><option>Hallmarking Centre</option><option>Fire Assay Laboratory</option><option>XRF Laboratory</option><option>Complete Precious Metal Plant</option><option>Existing Plant Upgrade</option></select></label><label>Feed<select name="feed" defaultValue="Gold dust"><option>Gold dust</option><option>Jewellery scrap</option><option>Dore</option><option>Mixed precious-metal scrap</option><option>Other</option></select></label><label>Capacity *<select name="capacity" defaultValue="1–5 kg" required><option>&lt;1 kg</option><option>1–5 kg</option><option>5–10 kg</option><option>10–25 kg</option><option>25–50 kg</option><option>50–100 kg</option><option>100 kg+</option></select></label><label>Required production / day<input name="production_per_day" placeholder="Tell us your target" /></label><label>Name *<input name="name" required placeholder="Your name" /></label><label>Company<input name="company" placeholder="Company name" /></label><label>Country / City<input name="country_city" placeholder="Country or city" /></label><label>Phone / WhatsApp *<input name="phone" required placeholder="+91" /></label><label className="full-field">Email *<input name="email" type="email" required placeholder="you@company.com" /></label><label>Available area<input name="available_area" placeholder="Approx. floor area" /></label><label>Project planner<select name="planner" defaultValue="Not sure yet"><option>Not sure yet</option><option>Need a project plan</option><option>Have a layout / drawing</option><option>Need a feasibility discussion</option></select></label><label className="full-field">Message<textarea name="message" rows={4} required placeholder="Tell us about your requirement" /></label><label className="upload-field full-field"><Upload size={16} /> Upload PDF / Excel / images<input type="file" name="attachment" accept=".pdf,.xlsx,.xls,.png,.jpg,.jpeg,.dwg" disabled={!attachmentsAvailable} />{!attachmentsAvailable && <small>File uploads are currently unavailable. You can submit your enquiry without an attachment.</small>}</label></div><button className="quote-button" type="submit" disabled={sending}>{sending ? 'Sending…' : <>Submit Enquiry <Send size={16} /></>}</button>{sent && <div className="form-message success-message"><CheckCircle2 size={17} /> Thanks — your enquiry has been received.</div>}{error && <div className="form-message error-message">{error}</div>}</form></section>
       </main>
       <footer className="site-footer" id="contact"><div className="footer-main"><div><a className="brand" href="#home"><span className="brand-mark"><span>GH</span></span><span className="brand-name"><strong>GOLD HUNTER</strong><small>TECHNOLOGIES</small></span></a><p>Precision engineering for precious-metal operations.</p></div><div className="footer-contact"><span><Phone size={15} /> +91 00000 00000</span><span><Mail size={15} /> sales@goldhuntertech.com</span><span><MapPin size={15} /> India / Global Projects</span></div><a className="quote-button" href="#quote">Start a conversation <ArrowRight size={16} /></a></div><div className="footer-bottom"><span>© 2026 Gold Hunter Technologies. All rights reserved.</span><span>Refinery · Hallmarking · Assaying · Bullion · Turnkey Projects</span></div></footer>
     </div>

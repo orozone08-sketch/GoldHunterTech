@@ -1,0 +1,13 @@
+{
+  "name": "goldhuntertech",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "npm --prefix frontend run build && tsc --noEmit",
+    "deploy": "npm run build && wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "db:local": "wrangler d1 migrations apply DB --local"
+  },
+  "dependencies": { "hono": "^4.12.0" },
+  "devDependencies": { "@cloudflare/workers-types": "latest", "typescript": "^5.9.2", "wrangler": "^4.149.0" }
+}

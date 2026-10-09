@@ -1,0 +1,56 @@
+name: Cloudflare
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm run build
+      - run: npm run db:local
+      - run: npx wrangler deploy --dry-run
+  deploy:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 1a970a489b3675156722383f7ce0fffd
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - run: test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Set the repository CLOUDFLARE_API_TOKEN secret (Workers Scripts Edit and D1 Edit for the OrozOne account).'; exit 1; }
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm run deploy
+      - name: Verify production
+        run: |
+          curl --fail --retry 5 --retry-delay 3 https://goldhuntertech.orozone08.workers.dev/ > /dev/null
+          curl --fail --retry 5 --retry-delay 3 https://goldhuntertech.orozone08.workers.dev/api/health | jq -e '.status == "ok" and .database == "ok"'
+
+

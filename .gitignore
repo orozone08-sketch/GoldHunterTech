@@ -1,4 +1,8 @@
 # Frontend dependencies and build output
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/

@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "goldhuntertech",
+  "main": "backend/src/index.ts",
+  "account_id": "1a970a489b3675156722383f7ce0fffd",
+  "compatibility_date": "2026-10-09",
+  "workers_dev": true,
+  "assets": { "directory": "frontend/dist", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
+  "d1_databases": [{ "binding": "DB", "database_name": "goldhuntertech", "database_id": "3b403e2f-5481-46fb-bf0e-d07ae82e438e", "migrations_dir": "backend/migrations" }],
+  "observability": { "enabled": true }
+  // After activating R2, create goldhuntertech-attachments and add:
+  // ,"r2_buckets": [{ "binding": "ATTACHMENTS", "bucket_name": "goldhuntertech-attachments" }]
+}
+
+
+
