@@ -8,7 +8,7 @@ const fields = ['name', 'email', 'phone', 'company', 'country', 'interest', 'cap
   'project_type', 'feed', 'production_per_day', 'country_city', 'available_area', 'planner', 'message'];
 
 app.get('/api/health', async (c) => {
-  await c.env.DB.prepare('SELECT 1').first();
+  await c.env.DB.prepare('SELECT id FROM enquiries LIMIT 1').first();
   return c.json({ status: 'ok', service: 'GoldHunterTech', database: 'ok', attachments: Boolean(c.env.ATTACHMENTS) });
 });
 app.post('/api/contact', bodyLimit({ maxSize: MAX_FILE_BYTES + 64 * 1024, onError: (c) => c.json({ success: false, message: 'Request exceeds 5 MB.' }, 413) }), async (c) => {
